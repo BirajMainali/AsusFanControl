@@ -1,8 +1,7 @@
-﻿using AsusSystemAnalysis;
-using System;
+﻿using System;
+using AsusSystemAnalysis;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AsusFanControl
@@ -19,7 +18,7 @@ namespace AsusFanControl
             AsusWinIO64.ShutdownWinIo();
         }
 
-        public void SetFanSpeed(byte value, byte fanIndex = 0)
+        private void SetFanSpeed(byte value, byte fanIndex = 0)
         {
             AsusWinIO64.HealthyTable_SetFanIndex(fanIndex);
             AsusWinIO64.HealthyTable_SetFanPwmDuty(value);
@@ -32,10 +31,37 @@ namespace AsusFanControl
             SetFanSpeed(value, fanIndex);
         }
 
-        public void SetFanSpeeds(byte value)
+        public void ControlFanSpeed(Action<int, int> afterControl = null)
+        {
+            while (true)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(30));
+                var cpuTemp = AsusWinIO64.Thermal_Read_Cpu_Temperature();
+                var fanSpeed = GetFanSpeedBasedOnTemperature(cpuTemp);
+                SetFanSpeed(fanSpeed);
+                afterControl?.Invoke(fanSpeed, (int)cpuTemp);
+            }
+        }
+
+        private int GetFanSpeedBasedOnTemperature(ulong cpuTemp)
+        {
+            return 
+                cpuTemp > 80 ? 100 :
+                cpuTemp > 75 ? 90 :
+                cpuTemp > 70 ? 80 :
+                cpuTemp > 65 ? 75 :
+                cpuTemp > 60 ? 70 :
+                cpuTemp > 55 ? 65 :
+                cpuTemp > 50 ? 60 :
+                cpuTemp > 45 ? 55 :
+                cpuTemp > 40 ? 50 : 
+                40; // cpuTemp <= 40
+        }
+
+        private void SetFanSpeeds(byte value)
         {
             var fanCount = AsusWinIO64.HealthyTable_FanCounts();
-            for(byte fanIndex = 0; fanIndex < fanCount; fanIndex++)
+            for (byte fanIndex = 0; fanIndex < fanCount; fanIndex++)
             {
                 SetFanSpeed(value, fanIndex);
             }

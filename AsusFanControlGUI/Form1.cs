@@ -1,111 +1,148 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using AsusFanControl;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using Microsoft.Win32;
 
 namespace AsusFanControlGUI
 {
     public partial class Form1 : Form
     {
-        AsusControl asusControl = new AsusControl();
-        int fanSpeed = 0;
+        private readonly AsusControl _asusControl = new AsusControl();
+        private int _fanSpeed;
 
         public Form1()
         {
             InitializeComponent();
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
+            LoadSettings();
+            Application.ApplicationExit += OnApplicationExit;
 
+            Task.Run(() =>
+            {
+                _asusControl.ControlFanSpeed((speed, temperature) =>
+                {
+                    Invoke(new Action(() =>
+                    {
+                        trackBarFanSpeed.Value = speed;
+                        labelCPUTemp.Text = temperature.ToString();
+                        labelRPM.Text = string.Join(" ", _asusControl.GetFanSpeeds());
+                        labelValue.Text = speed.ToString();
+                    }));
+                });
+            });
+        }
+
+        private void OnApplicationExit(object sender, EventArgs e)
+        {
+            if (Properties.Settings.Default.turnOffControlOnExit)
+            {
+                _asusControl.SetFanSpeeds(0);
+            }
+        }
+
+        private void LoadSettings()
+        {
             toolStripMenuItemTurnOffControlOnExit.Checked = Properties.Settings.Default.turnOffControlOnExit;
             toolStripMenuItemForbidUnsafeSettings.Checked = Properties.Settings.Default.forbidUnsafeSettings;
             trackBarFanSpeed.Value = Properties.Settings.Default.fanSpeed;
+            checkBoxTurnOn.Checked = Properties.Settings.Default.fanSpeed > 0;
         }
 
-        private void OnProcessExit(object sender, EventArgs e)
-        {
-            if (Properties.Settings.Default.turnOffControlOnExit)
-                asusControl.SetFanSpeeds(0);
-        }
-
-        private void toolStripMenuItemTurnOffControlOnExit_CheckedChanged(object sender, EventArgs e)
+        private void ToolStripMenuItemTurnOffControlOnExitCheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.turnOffControlOnExit = toolStripMenuItemTurnOffControlOnExit.Checked;
             Properties.Settings.Default.Save();
         }
 
-        private void toolStripMenuItemForbidUnsafeSettings_CheckedChanged(object sender, EventArgs e)
+        private void ToolStripMenuItemForbidUnsafeSettingsCheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.forbidUnsafeSettings = toolStripMenuItemForbidUnsafeSettings.Checked;
             Properties.Settings.Default.Save();
         }
 
-        private void toolStripMenuItemCheckForUpdates_Click(object sender, EventArgs e)
+        private void RegisterOnStartup(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("https://github.com/Karmel0x/AsusFanControl/releases");
+            UnregisterOnStartup();
+            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            if (key != null)
+            {
+                string exePath = Application.ExecutablePath;
+                string value = $"\"{exePath}\" --silent";
+                key.SetValue("AsusFanControl", value);
+            }
+
+            MessageBox.Show("Registered on startup");
         }
 
-        private void setFanSpeed()
+        private void UnregisterOnStartup()
+        {
+            var key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            if (key != null && key.GetValue("AsusFanControl") != null)
+            {
+                key.DeleteValue("AsusFanControl");
+            }
+        }
+
+        private void SetFanSpeed()
         {
             var value = trackBarFanSpeed.Value;
             Properties.Settings.Default.fanSpeed = value;
             Properties.Settings.Default.Save();
 
             if (!checkBoxTurnOn.Checked)
+            {
                 value = 0;
+            }
 
-            if (value == 0)
-                labelValue.Text = "turned off";
-            else
-                labelValue.Text = value.ToString();
+            labelValue.Text = value == 0 ? "turned off" : value.ToString();
 
-            if (fanSpeed == value)
-                return;
-
-            fanSpeed = value;
-
-            asusControl.SetFanSpeeds(value);
+            if (_fanSpeed != value)
+            {
+                _fanSpeed = value;
+                _asusControl.SetFanSpeeds(value);
+            }
         }
 
-        private void checkBoxTurnOn_CheckedChanged(object sender, EventArgs e)
+        private void CheckBoxTurnOnCheckedChanged(object sender, EventArgs e)
         {
-            setFanSpeed();
+            SetFanSpeed();
         }
 
-        private void trackBarFanSpeed_MouseCaptureChanged(object sender, EventArgs e)
+        private void TrackBarFanSpeedValueChanged(object sender, EventArgs e)
         {
             if (Properties.Settings.Default.forbidUnsafeSettings)
             {
-                if (trackBarFanSpeed.Value < 40)
-                    trackBarFanSpeed.Value = 40;
-                else if (trackBarFanSpeed.Value > 99)
-                    trackBarFanSpeed.Value = 99;
+                trackBarFanSpeed.Value = Clamp(trackBarFanSpeed.Value, 40, 90);
             }
 
-            setFanSpeed();
+            SetFanSpeed();
         }
 
-        private void trackBarFanSpeed_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode != Keys.Left && e.KeyCode != Keys.Right)
-                return;
 
-            trackBarFanSpeed_MouseCaptureChanged(sender, e);
+        private int Clamp(int value, int min, int max)
+        {
+            if (value < min) return min;
+            return value > max ? max : value;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void TrackBarFanSpeedKeyUp(object sender, KeyEventArgs e)
         {
-            labelRPM.Text = string.Join(" ", asusControl.GetFanSpeeds());
+            if (e.KeyCode == Keys.Left || e.KeyCode == Keys.Right)
+            {
+                TrackBarFanSpeedValueChanged(sender, e);
+            }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void ButtonShowFanSpeeds_Click(object sender, EventArgs e)
         {
-            labelCPUTemp.Text = $"{asusControl.Thermal_Read_Cpu_Temperature()}";
+            labelRPM.Text = string.Join(" ", _asusControl.GetFanSpeeds());
+        }
+
+        private void ButtonShowCpuTemp_Click(object sender, EventArgs e)
+        {
+            labelCPUTemp.Text = _asusControl.Thermal_Read_Cpu_Temperature().ToString();
         }
     }
 }

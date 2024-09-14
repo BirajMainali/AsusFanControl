@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AsusFanControlGUI
@@ -14,9 +12,19 @@ namespace AsusFanControlGUI
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            var args = Environment.GetCommandLineArgs();
+            var isSilent = args.Contains("--silent");
+            if (isSilent)
+            {
+                var service = BackgroundWorkerService.GetInstance();
+                service.StartListener();
+            }
+            else
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new Form1());
+            }
         }
     }
 }
