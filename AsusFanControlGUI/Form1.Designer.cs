@@ -56,8 +56,8 @@
             this.trackBarFanSpeed.Size = new System.Drawing.Size(300, 45);
             this.trackBarFanSpeed.TabIndex = 0;
             this.trackBarFanSpeed.Value = 100;
-            this.trackBarFanSpeed.KeyUp += new System.Windows.Forms.KeyEventHandler(this.trackBarFanSpeed_KeyUp);
-            this.trackBarFanSpeed.MouseCaptureChanged += new System.EventHandler(this.trackBarFanSpeed_MouseCaptureChanged);
+            this.trackBarFanSpeed.KeyUp += new System.Windows.Forms.KeyEventHandler(this.TrackBarFanSpeedKeyUpUp);
+            this.trackBarFanSpeed.MouseCaptureChanged += new System.EventHandler(this.TrackBarFanSpeedMouseCaptureChangedChanged);
             // 
             // label1
             // 
@@ -114,7 +114,7 @@
             this.checkBoxTurnOn.TabIndex = 6;
             this.checkBoxTurnOn.Text = "Turn on fan control";
             this.checkBoxTurnOn.UseVisualStyleBackColor = true;
-            this.checkBoxTurnOn.CheckedChanged += new System.EventHandler(this.checkBoxTurnOn_CheckedChanged);
+            this.checkBoxTurnOn.CheckedChanged += new System.EventHandler(this.CheckBoxTurnOnCheckedChangedChanged);
             // 
             // labelCPUTemp
             // 
@@ -170,7 +170,7 @@
             this.toolStripMenuItemTurnOffControlOnExit.Name = "toolStripMenuItemTurnOffControlOnExit";
             this.toolStripMenuItemTurnOffControlOnExit.Size = new System.Drawing.Size(196, 22);
             this.toolStripMenuItemTurnOffControlOnExit.Text = "Turn off control on exit";
-            this.toolStripMenuItemTurnOffControlOnExit.CheckedChanged += new System.EventHandler(this.toolStripMenuItemTurnOffControlOnExit_CheckedChanged);
+            this.toolStripMenuItemTurnOffControlOnExit.CheckedChanged += new System.EventHandler(this.ToolStripMenuItemTurnOffControlOnExitCheckedChangedChanged);
             // 
             // toolStripMenuItemForbidUnsafeSettings
             // 
@@ -178,14 +178,14 @@
             this.toolStripMenuItemForbidUnsafeSettings.Name = "toolStripMenuItemForbidUnsafeSettings";
             this.toolStripMenuItemForbidUnsafeSettings.Size = new System.Drawing.Size(196, 22);
             this.toolStripMenuItemForbidUnsafeSettings.Text = "Forbid unsafe settings";
-            this.toolStripMenuItemForbidUnsafeSettings.CheckedChanged += new System.EventHandler(this.toolStripMenuItemForbidUnsafeSettings_CheckedChanged);
+            this.toolStripMenuItemForbidUnsafeSettings.CheckedChanged += new System.EventHandler(this.ToolStripMenuItemForbidUnsafeSettingsCheckedChangedChanged);
             // 
             // toolStripMenuItemCheckForUpdates
             // 
             this.toolStripMenuItemCheckForUpdates.Name = "toolStripMenuItemCheckForUpdates";
             this.toolStripMenuItemCheckForUpdates.Size = new System.Drawing.Size(115, 20);
             this.toolStripMenuItemCheckForUpdates.Text = "Check for updates";
-            this.toolStripMenuItemCheckForUpdates.Click += new System.EventHandler(this.toolStripMenuItemCheckForUpdates_Click);
+            this.toolStripMenuItemCheckForUpdates.Click += new System.EventHandler(this.ToolStripMenuItemCheckForUpdatesClickClick);
             // 
             // Form1
             // 
